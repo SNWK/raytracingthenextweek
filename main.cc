@@ -38,9 +38,26 @@ vec3 color(const ray& r, hitable *world, int depth) {
         ray scattered;
         vec3 attenuation;
         vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
-        if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered)){
-            vec3 tmp = emitted + attenuation*color(scattered, world, depth+1);
-            return tmp;
+        float pdf;
+        vec3 albedo;
+        if (depth < 50 && rec.mat_ptr->scatter(r, rec, albedo, scattered)){
+
+            vec3 on_light = vec3(213+drand48()*(343-213),554,227+drand48()*(332-227));
+            vec3 to_light = on_light - rec.p;
+            float distance_squared = to_light.squared_length();
+            to_light.make_unit_vector();
+            if(dot(to_light, rec.normal)<0)
+                return emitted;
+            float light_area = (343-213)*(332-227);
+            float light_cosine = fabs(to_light.y());
+            if(light_cosine<0.00001)
+                return emitted;
+            pdf = distance_squared/(light_cosine*light_area);
+            scattered = ray(rec.p, to_light, r.time());
+            
+            // vec3 tmp = emitted + attenuation*color(scattered, world, depth+1);
+            // return tmp;
+            return emitted+albedo*rec.mat_ptr->scattering_pdf(r,rec,scattered)*color(scattered,world,depth+1)/pdf;
         }    
         else 
             return emitted;
@@ -309,9 +326,9 @@ hitable *random_scene() {
 }
 
 int main() {
-    int nx = 100;
-    int ny = 100;
-    int ns = 100;
+    int nx = 1000;
+    int ny = 1000;
+    int ns = 500;
     std::cout << "P3\n" << nx << " " << ny << "\n255\n";
     hitable *list[5];
     float R = cos(M_PI/4);

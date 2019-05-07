@@ -55,6 +55,8 @@ vec3 random_in_unit_sphere() {
 class material  {
     public:
         virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const = 0;
+         virtual float scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered) const {
+              return false;}
         virtual vec3 emitted(float u, float v, const vec3& p) const {
             return vec3(0,0,0); }
 };
@@ -63,6 +65,7 @@ class diffuse_light : public material  {
     public:
         diffuse_light(texture *a) : emit(a) {}
         virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const { return false; }
+       
         virtual vec3 emitted(float u, float v, const vec3& p) const { return emit->value(u, v, p); }
         texture *emit;
 };
@@ -88,7 +91,12 @@ class lambertian : public material {
              attenuation = albedo->value(rec.u, rec.v, rec.p);
              return true;
         }
-
+        float scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered) const {
+            float cosine = dot(rec.normal, unit_vector(scattered.direction()));
+            if (cosine < 0)
+                return 0;
+            return cosine / M_PI;
+        }
         texture *albedo;
 };
 
