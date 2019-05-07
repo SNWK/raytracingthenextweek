@@ -24,7 +24,13 @@
 #include "texture.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#include "triangle.h"
 
+struct temp{
+    int x;
+    int y;
+    int z;
+};
 
 vec3 color(const ray& r, hitable *world, int depth) {
     hit_record rec;
@@ -32,8 +38,10 @@ vec3 color(const ray& r, hitable *world, int depth) {
         ray scattered;
         vec3 attenuation;
         vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
-        if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered)) 
-             return emitted + attenuation*color(scattered, world, depth+1);
+        if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered)){
+            vec3 tmp = emitted + attenuation*color(scattered, world, depth+1);
+            return tmp;
+        }    
         else 
             return emitted;
     }
@@ -201,6 +209,54 @@ hitable *cornell_box() {
     return new hitable_list(list,i);
 }
 
+hitable *simple_triangle() {
+    hitable **list = new hitable*[8];
+    int i = 0;
+    material *red = new lambertian( new constant_texture(vec3(0.65, 0.05, 0.05)) );
+    material *white = new lambertian( new constant_texture(vec3(0.73, 0.73, 0.73)) );
+    material *green = new lambertian( new constant_texture(vec3(0.12, 0.45, 0.15)) );
+    material *light = new diffuse_light( new constant_texture(vec3(15, 15, 15)) );
+    list[i++] = new flip_normals(new yz_rect(0, 555, 0, 555, 555, green));
+    list[i++] = new yz_rect(0, 555, 0, 555, 0, red);
+    list[i++] = new xz_rect(213, 343, 227, 332, 554, light);
+    list[i++] = new flip_normals(new xz_rect(0, 555, 0, 555, 555, white));
+    list[i++] = new xz_rect(0, 555, 0, 555, 0, white);
+    list[i++] = new flip_normals(new xy_rect(0, 555, 0, 555, 555, white));
+    list[i++] = new triangle( vec3(450,50,200),vec3(100,50,100), vec3(275,200,200),green);
+    return new hitable_list(list,i);
+}
+
+hitable *simple_triangle_3d() {
+    hitable **list = new hitable*[8];
+    int i = 0;
+    material *red = new lambertian( new constant_texture(vec3(0.65, 0.05, 0.05)) );
+    material *white = new lambertian( new constant_texture(vec3(0.73, 0.73, 0.73)) );
+    material *green = new lambertian( new constant_texture(vec3(0.12, 0.45, 0.15)) );
+    material *light = new diffuse_light( new constant_texture(vec3(15, 15, 15)) );
+    material *llight = new diffuse_light( new constant_texture(vec3(4, 4, 0)) );
+    
+    list[i++] = new flip_normals(new yz_rect(0, 555, 0, 555, 555, green));
+    list[i++] = new yz_rect(0, 555, 0, 555, 0, red);
+    list[i++] = new xz_rect(213, 343, 227, 332, 554, light);
+    list[i++] = new flip_normals(new xz_rect(0, 555, 0, 555, 555, white));
+    list[i++] = new xz_rect(0, 555, 0, 555, 0, white);
+    list[i++] = new flip_normals(new xy_rect(0, 555, 0, 555, 555, white));
+    vec3 Z = vec3(0,0, 300);
+    vec3 A = vec3(100,100,100)+Z;
+    vec3 B = vec3(300,0,50)+Z;
+    vec3 C = vec3(500,150,200)+Z;
+    vec3 D = vec3(200,250,150)+Z;
+    list[i++] = new triangle( D,A,B,white);
+    list[i++] = new triangle( D,C,A,white);
+    list[i++] = new triangle( D,B,C,white);
+    list[i++] = new triangle( B,A,C,llight);
+    // list[i++] = new sphere(vec3(100,100,100),  0.2, new metal(vec3(0.5*(1 + drand48()), 0.5*(1 + drand48()), 0.5*(1 + drand48())),  0.5*drand48()));
+    texture *pertext = new noise_texture(4);
+    list[i++] =  new sphere(vec3(100, 2, 0), 2, new lambertian( pertext ));    
+    return new hitable_list(list,i);
+}
+
+
 hitable *two_perlin_spheres() {
     texture *pertext = new noise_texture(4);
     hitable **list = new hitable*[2];
@@ -235,7 +291,7 @@ hitable *random_scene() {
                 }
                 else if (choose_mat < 0.95) { // metal
                     list[i++] = new sphere(center, 0.2,
-                            new metal(vec3(0.5*(1 + drand48()), 0.5*(1 + drand48()), 0.5*(1 + drand48())),  0.5*drand48()));
+                                new metal(vec3(0.5*(1 + drand48()), 0.5*(1 + drand48()), 0.5*(1 + drand48())),  0.5*drand48()));
                 }
                 else {  // glass
                     list[i++] = new sphere(center, 0.2, new dielectric(1.5));
@@ -253,34 +309,39 @@ hitable *random_scene() {
 }
 
 int main() {
-    int nx = 800;
-    int ny = 800;
+    int nx = 100;
+    int ny = 100;
     int ns = 100;
     std::cout << "P3\n" << nx << " " << ny << "\n255\n";
     hitable *list[5];
     float R = cos(M_PI/4);
     //hitable *world = random_scene();
-    //hitable *world = two_spheres();
-    //hitable *world = two_perlin_spheres();
+    // hitable *world = two_spheres();
+    // hitable *world = two_perlin_spheres();
     //hitable *world = earth();
-    //hitable *world = simple_light();
+    // hitable *world = simple_light();
     hitable *world = cornell_box();
+    // hitable *world = simple_triangle();
+    // hitable *world = simple_triangle_3d();
     //hitable *world = cornell_balls();
-    //hitable *world = cornell_smoke();
+    // hitable *world = cornell_smoke();
     //hitable *world = cornell_final();
     //hitable *world = final();
 
     vec3 lookfrom(278, 278, -800);
     //vec3 lookfrom(478, 278, -600);
-    vec3 lookat(278,278,0);
-    //vec3 lookfrom(0, 0, 6);
-    //vec3 lookat(0,0,0);
+    vec3 lookat(278,278,0); //point
+    // vec3 lookfrom(0, 0, 60);
+    // vec3 lookat(0,0,0);
     float dist_to_focus = 10.0;
     float aperture = 0.0;
     float vfov = 40.0;
 
     camera cam(lookfrom, lookat, vec3(0,1,0), vfov, float(nx)/float(ny), aperture, dist_to_focus, 0.0, 1.0);
-
+    int size = nx*ny;
+    temp *stor = (temp *)malloc(sizeof(temp)*size);
+    int index = 0;
+    #pragma omp parallel for schedule(dynamic, 1)
     for (int j = ny-1; j >= 0; j--) {
         for (int i = 0; i < nx; i++) {
             vec3 col(0, 0, 0);
@@ -292,12 +353,19 @@ int main() {
                 col += color(r, world,0);
             }
             col /= float(ns);
+            col[0] = col[0] <= 1 ? col[0] : 1;
+            col[1] = col[1] <= 1 ? col[1] : 1;
+            col[2] = col[2] <= 1 ? col[2] : 1;
             col = vec3( sqrt(col[0]), sqrt(col[1]), sqrt(col[2]) );
             int ir = int(255.99*col[0]); 
             int ig = int(255.99*col[1]); 
             int ib = int(255.99*col[2]); 
-            std::cout << ir << " " << ig << " " << ib << "\n";
+            stor[(ny-1-j)*nx+i].x = ir; 
+            stor[(ny-1-j)*nx+i].y = ig; 
+            stor[(ny-1-j)*nx+i].z = ib; 
         }
     }
+    for(index = 0;index<size;index++){
+        std::cout << stor[index].x << " " << stor[index].y << " " << stor[index].z << "\n";
+    }
 }
-
