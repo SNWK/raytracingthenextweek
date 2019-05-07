@@ -37,27 +37,27 @@ vec3 color(const ray& r, hitable *world, int depth) {
     if (world->hit(r, 0.001, MAXFLOAT, rec)) { 
         ray scattered;
         vec3 attenuation;
-        vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
+        vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
         float pdf;
-        vec3 albedo;
-        if (depth < 50 && rec.mat_ptr->scatter(r, rec, albedo, scattered)){
-
-            vec3 on_light = vec3(213+drand48()*(343-213),554,227+drand48()*(332-227));
-            vec3 to_light = on_light - rec.p;
-            float distance_squared = to_light.squared_length();
-            to_light.make_unit_vector();
-            if(dot(to_light, rec.normal)<0)
-                return emitted;
-            float light_area = (343-213)*(332-227);
-            float light_cosine = fabs(to_light.y());
-            if(light_cosine<0.00001)
-                return emitted;
-            pdf = distance_squared/(light_cosine*light_area);
-            scattered = ray(rec.p, to_light, r.time());
-            
-            // vec3 tmp = emitted + attenuation*color(scattered, world, depth+1);
-            // return tmp;
-            return emitted+albedo*rec.mat_ptr->scattering_pdf(r,rec,scattered)*color(scattered,world,depth+1)/pdf;
+        if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered)){
+            if(drand48()<0.1){
+                vec3 on_light = vec3(213+drand48()*(343-213),554,227+drand48()*(332-227));
+                vec3 to_light = on_light - rec.p;
+                float distance_squared = to_light.squared_length();
+                to_light.make_unit_vector();
+                if(dot(to_light, rec.normal)<0)
+                    return emitted;
+                float light_area = (343-213)*(332-227);
+                float light_cosine = fabs(to_light.y());
+                if(light_cosine<0.00001)
+                    return emitted;
+                pdf = distance_squared/(light_cosine*light_area);
+                scattered = ray(rec.p, to_light, r.time());
+                return emitted+attenuation*rec.mat_ptr->scattering_pdf(r,rec,scattered)*color(scattered,world,depth+1)/pdf;
+            }else{
+                vec3 tmp = emitted + attenuation*color(scattered, world, depth+1);
+                return tmp;
+            }
         }    
         else 
             return emitted;
@@ -250,7 +250,9 @@ hitable *simple_triangle_3d() {
     material *white = new lambertian( new constant_texture(vec3(0.73, 0.73, 0.73)) );
     material *green = new lambertian( new constant_texture(vec3(0.12, 0.45, 0.15)) );
     material *light = new diffuse_light( new constant_texture(vec3(15, 15, 15)) );
-    material *llight = new diffuse_light( new constant_texture(vec3(4, 4, 0)) );
+    material *llight = new diffuse_light( new constant_texture(vec3(15, 15, 0)) );
+    material *diel = new dielectric(1.5);
+    material *met = new metal(vec3(0.73,0.05,0.48),0.2);
     
     list[i++] = new flip_normals(new yz_rect(0, 555, 0, 555, 555, green));
     list[i++] = new yz_rect(0, 555, 0, 555, 0, red);
@@ -263,14 +265,14 @@ hitable *simple_triangle_3d() {
     vec3 B = vec3(300,0,50)+Z;
     vec3 C = vec3(500,150,200)+Z;
     vec3 D = vec3(200,250,150)+Z;
-    list[i++] = new triangle( D,A,B,white);
-    list[i++] = new triangle( D,C,A,white);
-    list[i++] = new triangle( D,B,C,white);
-    list[i++] = new triangle( B,A,C,llight);
+    list[i++] = new triangle( D,A,B,diel);
+    list[i++] = new triangle( D,C,A,diel);
+    list[i++] = new triangle( D,B,C,diel);
+    list[i++] = new triangle( B,A,C,diel);
     list[i++] = new translate(new rotate_y(new box(vec3(0, 0, 0), vec3(165, 330, 165), red),  15), vec3(265,0,295));
     // list[i++] = new sphere(vec3(100,100,100),  0.2, new metal(vec3(0.5*(1 + drand48()), 0.5*(1 + drand48()), 0.5*(1 + drand48())),  0.5*drand48()));
     texture *pertext = new noise_texture(4);
-    list[i++] =  new sphere(vec3(100, 2, 0), 2, new lambertian( pertext ));    
+    list[i++] =  new sphere(vec3(100, 50, 200), 50, met);    
     return new hitable_list(list,i);
 }
 
@@ -327,13 +329,9 @@ hitable *random_scene() {
 }
 
 int main() {
-    int nx = 1000;
-    int ny = 1000;
-<<<<<<< HEAD
-    int ns = 500;
-=======
+    int nx = 200;
+    int ny = 200;
     int ns = 200;
->>>>>>> f794c215e95bcce6010995bdf3bf41066a8f840c
     std::cout << "P3\n" << nx << " " << ny << "\n255\n";
     hitable *list[5];
     float R = cos(M_PI/4);
