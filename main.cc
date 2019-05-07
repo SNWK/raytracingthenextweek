@@ -222,7 +222,7 @@ hitable *cornell_box() {
     list[i++] = new xz_rect(0, 555, 0, 555, 0, white);
     list[i++] = new flip_normals(new xy_rect(0, 555, 0, 555, 555, white));
     list[i++] = new translate(new rotate_y(new box(vec3(0, 0, 0), vec3(165, 165, 165), white), -18), vec3(130,0,65));
-    list[i++] = new translate(new rotate_y(new box(vec3(0, 0, 0), vec3(165, 330, 165), white),  15), vec3(265,0,295));
+    list[i++] = new translate(new rotate_y(new box(vec3(0, 0, 0), vec3(165, 330, 165), red),  15), vec3(265,0,295));
     return new hitable_list(list,i);
 }
 
@@ -244,7 +244,7 @@ hitable *simple_triangle() {
 }
 
 hitable *simple_triangle_3d() {
-    hitable **list = new hitable*[8];
+    hitable **list = new hitable*[13];
     int i = 0;
     material *red = new lambertian( new constant_texture(vec3(0.65, 0.05, 0.05)) );
     material *white = new lambertian( new constant_texture(vec3(0.73, 0.73, 0.73)) );
@@ -258,7 +258,7 @@ hitable *simple_triangle_3d() {
     list[i++] = new flip_normals(new xz_rect(0, 555, 0, 555, 555, white));
     list[i++] = new xz_rect(0, 555, 0, 555, 0, white);
     list[i++] = new flip_normals(new xy_rect(0, 555, 0, 555, 555, white));
-    vec3 Z = vec3(0,0, 300);
+    vec3 Z = vec3(-50,0, 50);
     vec3 A = vec3(100,100,100)+Z;
     vec3 B = vec3(300,0,50)+Z;
     vec3 C = vec3(500,150,200)+Z;
@@ -267,6 +267,7 @@ hitable *simple_triangle_3d() {
     list[i++] = new triangle( D,C,A,white);
     list[i++] = new triangle( D,B,C,white);
     list[i++] = new triangle( B,A,C,llight);
+    list[i++] = new translate(new rotate_y(new box(vec3(0, 0, 0), vec3(165, 330, 165), red),  15), vec3(265,0,295));
     // list[i++] = new sphere(vec3(100,100,100),  0.2, new metal(vec3(0.5*(1 + drand48()), 0.5*(1 + drand48()), 0.5*(1 + drand48())),  0.5*drand48()));
     texture *pertext = new noise_texture(4);
     list[i++] =  new sphere(vec3(100, 2, 0), 2, new lambertian( pertext ));    
@@ -328,7 +329,11 @@ hitable *random_scene() {
 int main() {
     int nx = 1000;
     int ny = 1000;
+<<<<<<< HEAD
     int ns = 500;
+=======
+    int ns = 200;
+>>>>>>> f794c215e95bcce6010995bdf3bf41066a8f840c
     std::cout << "P3\n" << nx << " " << ny << "\n255\n";
     hitable *list[5];
     float R = cos(M_PI/4);
@@ -337,9 +342,9 @@ int main() {
     // hitable *world = two_perlin_spheres();
     //hitable *world = earth();
     // hitable *world = simple_light();
-    hitable *world = cornell_box();
+    // hitable *world = cornell_box();
     // hitable *world = simple_triangle();
-    // hitable *world = simple_triangle_3d();
+    hitable *world = simple_triangle_3d();
     //hitable *world = cornell_balls();
     // hitable *world = cornell_smoke();
     //hitable *world = cornell_final();
