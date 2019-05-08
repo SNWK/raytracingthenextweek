@@ -55,8 +55,8 @@ vec3 random_in_unit_sphere() {
 class material  {
     public:
         virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const = 0;
-         virtual float scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered) const {
-              return false;}
+        virtual float scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered) const {
+              return 0;}
         virtual vec3 emitted(const ray& r_in,const hit_record& rec, float u, float v, const vec3& p) const {
             return vec3(0,0,0); 
         }
@@ -152,7 +152,6 @@ class dielectric : public material {
              }
              return true;
         }
-
         float ref_idx;
 };
 

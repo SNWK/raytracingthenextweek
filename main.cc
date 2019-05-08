@@ -40,19 +40,21 @@ vec3 color(const ray& r, hitable *world, int depth) {
         vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
         float pdf;
         if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered)){
-            if(drand48()<1){
+            if(drand48()<0.8){
                 vec3 on_light = vec3(213+drand48()*(343-213),554,227+drand48()*(332-227));
                 vec3 to_light = on_light - rec.p;
                 float distance_squared = to_light.squared_length();
                 to_light.make_unit_vector();
                 if(dot(to_light, rec.normal)<0)
-                    return emitted;
+                    return attenuation*color(scattered, world, depth);
                 float light_area = (343-213)*(332-227);
                 float light_cosine = fabs(to_light.y());
                 if(light_cosine<0.00001)
-                    return emitted;
+                    return color(scattered, world, depth);
+                if(rec.mat_ptr->scattering_pdf(r,rec,scattered)==0)
+                    return emitted+attenuation*color(scattered, world, depth+1);
                 pdf = distance_squared/(light_cosine*light_area);
-                scattered = ray(rec.p, to_light, r.time());
+                scattered = ray(rec.p, to_light, r.time());  
                 return emitted+attenuation*rec.mat_ptr->scattering_pdf(r,rec,scattered)*color(scattered,world,depth+1)/pdf;
             }else{
                 vec3 tmp = emitted + attenuation*color(scattered, world, depth+1);
@@ -332,6 +334,10 @@ int main() {
     int nx = 2000;
     int ny = 2000;
     int ns = 1000;
+    fprintf(stderr,"Input the size and samples\n");
+    scanf("%d",&nx);
+    scanf("%d",&ns);
+    ny = nx;
     std::cout << "P3\n" << nx << " " << ny << "\n255\n";
     hitable *list[5];
     float R = cos(M_PI/4);

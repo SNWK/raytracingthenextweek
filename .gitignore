@@ -1,3 +1,5 @@
 output*
+out*
 *.o
 run*
+.vscode/*
