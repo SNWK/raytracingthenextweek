@@ -40,7 +40,7 @@ vec3 color(const ray& r, hitable *world, int depth) {
         vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
         float pdf;
         if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered)){
-            if(drand48()<0.1){
+            if(drand48()<1){
                 vec3 on_light = vec3(213+drand48()*(343-213),554,227+drand48()*(332-227));
                 vec3 to_light = on_light - rec.p;
                 float distance_squared = to_light.squared_length();
@@ -329,9 +329,9 @@ hitable *random_scene() {
 }
 
 int main() {
-    int nx = 200;
-    int ny = 200;
-    int ns = 200;
+    int nx = 2000;
+    int ny = 2000;
+    int ns = 1000;
     std::cout << "P3\n" << nx << " " << ny << "\n255\n";
     hitable *list[5];
     float R = cos(M_PI/4);
@@ -364,6 +364,8 @@ int main() {
     #pragma omp parallel for schedule(dynamic, 1)
     for (int j = ny-1; j >= 0; j--) {
         for (int i = 0; i < nx; i++) {
+            index++;
+            fprintf(stderr, "\rRendering (%d spp) %5.2f%%",ns, 100. * index / size);
             vec3 col(0, 0, 0);
             for (int s=0; s < ns; s++) {
                 float u = float(i+drand48())/ float(nx);
