@@ -40,19 +40,22 @@ vec3 color(const ray& r, hitable *world, int depth) {
         vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
         float pdf;
         if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered)){
-            if(drand48()<0.8){
+            if(drand48()<1){
                 vec3 on_light = vec3(213+drand48()*(343-213),554,227+drand48()*(332-227));
                 vec3 to_light = on_light - rec.p;
                 float distance_squared = to_light.squared_length();
                 to_light.make_unit_vector();
+                
                 if(dot(to_light, rec.normal)<0)
-                    return attenuation*color(scattered, world, depth);
+                    return emitted + attenuation*color(scattered, world, depth+1);
                 float light_area = (343-213)*(332-227);
                 float light_cosine = fabs(to_light.y());
-                if(light_cosine<0.00001)
-                    return color(scattered, world, depth);
+                if(light_cosine<0.01)
+                    return emitted + attenuation*color(scattered, world, depth+1);
+
                 if(rec.mat_ptr->scattering_pdf(r,rec,scattered)==0)
                     return emitted+attenuation*color(scattered, world, depth+1);
+
                 pdf = distance_squared/(light_cosine*light_area);
                 scattered = ray(rec.p, to_light, r.time());  
                 return emitted+attenuation*rec.mat_ptr->scattering_pdf(r,rec,scattered)*color(scattered,world,depth+1)/pdf;
@@ -255,13 +258,14 @@ hitable *simple_triangle_3d() {
     material *llight = new diffuse_light( new constant_texture(vec3(15, 15, 0)) );
     material *diel = new dielectric(1.5);
     material *met = new metal(vec3(0.73,0.05,0.48),0.2);
+    material *met_w = new metal(vec3(1,1,1),0);
     
     list[i++] = new flip_normals(new yz_rect(0, 555, 0, 555, 555, green));
     list[i++] = new yz_rect(0, 555, 0, 555, 0, red);
     list[i++] = new xz_rect(213, 343, 227, 332, 554, light);
     list[i++] = new flip_normals(new xz_rect(0, 555, 0, 555, 555, white));
     list[i++] = new xz_rect(0, 555, 0, 555, 0, white);
-    list[i++] = new flip_normals(new xy_rect(0, 555, 0, 555, 555, white));
+    list[i++] = new flip_normals(new xy_rect(0, 555, 0, 555, 555, met_w));
     vec3 Z = vec3(-50,0, 50);
     vec3 A = vec3(100,100,100)+Z;
     vec3 B = vec3(300,0,50)+Z;
