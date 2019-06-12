@@ -25,7 +25,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include "triangle.h"
-const float shadowingRatio = 1;
+const float shadowingRatio = 0.005;
 struct temp{
     int x;
     int y;
@@ -75,7 +75,7 @@ vec3 color(const ray& r, hitable *world, int depth) {
                 }
             }
 
-            return (1-shadowingRatio)*directScatterRtn + shadowingRatio*shadowingRtn;
+            return directScatterRtn + shadowingRatio*shadowingRtn;
         }    
         else 
             return emitted;
