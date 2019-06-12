@@ -40,29 +40,42 @@ vec3 color(const ray& r, hitable *world, int depth) {
         vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
         float pdf;
         if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered)){
-            if(drand48()<1){
-                vec3 on_light = vec3(213+drand48()*(343-213),554,227+drand48()*(332-227));
-                vec3 to_light = on_light - rec.p;
-                float distance_squared = to_light.squared_length();
-                to_light.make_unit_vector();
-                
-                if(dot(to_light, rec.normal)<0)
-                    return emitted + attenuation*color(scattered, world, depth+1);
-                float light_area = (343-213)*(332-227);
-                float light_cosine = fabs(to_light.y());
-                if(light_cosine<0.01)
-                    return emitted + attenuation*color(scattered, world, depth+1);
+            // directly scatter
+            vec3 directScatterRtn = emitted + attenuation*color(scattered, world, depth+1);
+            // shadowing procedure
+            vec3 shadowingRtn;
+            vec3 on_light = vec3(213+drand48()*(343-213),554,227+drand48()*(332-227));
+            vec3 to_light = on_light - rec.p;
+            float light_area = (343-213)*(332-227);
+            float light_cosine = fabs(to_light.y());
+            float distance_squared = to_light.squared_length();
+            to_light.make_unit_vector();
+            ray tolightRay = ray(rec.p, to_light, r.time());
 
-                if(rec.mat_ptr->scattering_pdf(r,rec,scattered)==0)
-                    return emitted+attenuation*color(scattered, world, depth+1);
-
-                pdf = distance_squared/(light_cosine*light_area);
-                scattered = ray(rec.p, to_light, r.time());  
-                return emitted+attenuation*rec.mat_ptr->scattering_pdf(r,rec,scattered)*color(scattered,world,depth+1)/pdf;
-            }else{
-                vec3 tmp = emitted + attenuation*color(scattered, world, depth+1);
-                return tmp;
+            // judge whether it faces to the light   
+            if(dot(to_light, rec.normal)<0 || rec.mat_ptr->scattering_pdf(r,rec,scattered)==0){
+                shadowingRtn = directScatterRtn;
+                // shadowingRtn = emitted + attenuation*color(scattered, world, depth+1);
             }
+            else{
+                hit_record rectmp;
+                if (world->hit(tolightRay, 0.001, MAXFLOAT, rectmp)){
+                    // if hit
+                    if(rectmp.mat_ptr->isLight){
+                        // hit light directly
+                        pdf = distance_squared/(light_cosine*light_area); 
+                        shadowingRtn =  emitted + attenuation*rec.mat_ptr->scattering_pdf(r,rec,tolightRay)*color(tolightRay,world,depth+1)/pdf;
+                    }else{
+                        shadowingRtn = directScatterRtn; 
+                        // shadowingRtn = emitted + attenuation*color(scattered, world, depth+1);
+                    }
+                }else{
+                    shadowingRtn = directScatterRtn;
+                    // shadowingRtn = emitted + attenuation*color(scattered, world, depth+1);
+                }
+            }
+
+            return 0.8*directScatterRtn + 0.2*shadowingRtn;
         }    
         else 
             return emitted;

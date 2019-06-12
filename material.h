@@ -60,6 +60,7 @@ class material  {
         virtual vec3 emitted(const ray& r_in,const hit_record& rec, float u, float v, const vec3& p) const {
             return vec3(0,0,0); 
         }
+        bool isLight = false;
 };
 
 class diffuse_light : public material  {
@@ -71,6 +72,7 @@ class diffuse_light : public material  {
             return emit->value(u,v,p);
         }
         texture *emit;
+        bool isLight = true;
 };
 
 
