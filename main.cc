@@ -25,7 +25,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include "triangle.h"
-
+const float shadowingRatio = 1;
 struct temp{
     int x;
     int y;
@@ -39,7 +39,7 @@ vec3 color(const ray& r, hitable *world, int depth) {
         vec3 attenuation;
         vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
         float pdf;
-        if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered)){
+        if (depth < 5 && rec.mat_ptr->scatter(r, rec, attenuation, scattered)){
             // directly scatter
             vec3 directScatterRtn = emitted + attenuation*color(scattered, world, depth+1);
             // shadowing procedure
@@ -61,7 +61,7 @@ vec3 color(const ray& r, hitable *world, int depth) {
                 hit_record rectmp;
                 if (world->hit(tolightRay, 0.001, MAXFLOAT, rectmp)){
                     // if hit
-                    if(rectmp.mat_ptr->isLight){
+                    if(rectmp.mat_ptr->isLight()){
                         // hit light directly
                         pdf = distance_squared/(light_cosine*light_area); 
                         shadowingRtn =  emitted + attenuation*rec.mat_ptr->scattering_pdf(r,rec,tolightRay)*color(tolightRay,world,depth+1)/pdf;
@@ -75,7 +75,7 @@ vec3 color(const ray& r, hitable *world, int depth) {
                 }
             }
 
-            return 0.8*directScatterRtn + 0.2*shadowingRtn;
+            return (1-shadowingRatio)*directScatterRtn + shadowingRatio*shadowingRtn;
         }    
         else 
             return emitted;
